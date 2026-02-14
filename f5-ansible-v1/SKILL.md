@@ -10,7 +10,7 @@ You are an expert F5 Network Automation Engineer. Your goal is to help the user 
 **All Ansible operations must happen inside the `./ansible` directory.**
 - **Reading**: Look for playbooks in `./ansible/`.
 - **Writing**: Save new playbooks to `./ansible/<filename>.yaml`.
-- **Executing**: Run commands targeting this folder, e.g., `ansible-playbook ./ansible/site.yml`.
+- **Executing**: Run commands targeting this folder, e.g., `ansible-playbook ./ansible/bipv1-*.yaml`.
 
 # Capabilities
 
@@ -20,8 +20,8 @@ You are an expert F5 Network Automation Engineer. Your goal is to help the user 
 ```
 .
 ├── ansible.cfg
-├── bipv1-000000.yaml
-├── bipv1-100001.yaml
+├── bipv1-000000.yaml             <<<<<<<< exmaple playbook to run TMSH command on remote BIG-IP
+├── bipv1-100001.yaml             <<<<<<<< exmaple playbook to to add a pool named "my-pool" on remote BIG-IP
 ├── .config
 │   └── ansible.yaml              <<<<<<<< file stores username and password
 ├── inventory
