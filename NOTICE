@@ -1,0 +1,14 @@
+f5-skills
+Copyright 2026 Allen SU.
+
+This project includes Agent Skills for F5 devices.
+
+Legal Disclaimer:
+- This is a personal project and a personal contribution to the open-source community.
+- It is NOT an official product of F5, Inc.
+- The views and opinions expressed in this project are those of the author (Allen) and do not necessarily reflect the official policy or position of F5, Inc.
+- This software is provided "as is", without warranty of any kind. It is not supported by F5 TAC.
+
+Attribution:
+- Portions of this software (such as command syntax, OIDs, and device logic) are based on F5 Public Documentation. 
+- All trademarks and copyrights for F5-related documentation and hardware belong to F5, Inc.

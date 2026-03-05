@@ -1,0 +1,32 @@
+- name: Ansible via Local
+  hosts: "{{ ply_host }}"
+  gather_facts: no
+  connection: local
+  vars_files:
+  - .config/ansible.yaml
+  - vars/bipv1_provider.yaml
+
+  tasks:
+  - name: Run show sys version
+    bigip_command:
+      provider: "{{ bip }}"
+      commands: 
+        - "tmsh show sys version"
+    delegate_to: localhost
+    register: result
+
+  - name: Display result
+    debug:
+      var: result
+
+  - name: Collect all BIG-IP information
+    bigip_device_info:
+      gather_subset:
+        - all
+      provider: "{{ bip }}"
+    delegate_to: localhost
+    register: result
+
+  - name: Display result
+    debug:
+      var: result

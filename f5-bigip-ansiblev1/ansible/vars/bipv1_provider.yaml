@@ -1,0 +1,8 @@
+bip:
+  user: "{{ cbip[ply_host | lower | replace('-', '')].username | default(default_auth.username) }}"
+  password: "{{ cbip[ply_host | lower | replace('-', '')].password | default(default_auth.password) }}"
+  # Logic: Use ansible_host if defined, otherwise use gateway
+  server: "{{ ansible_host | default(private_gateway) }}" 
+  validate_certs: no
+  server_port: "{{ ansible_port }}"
+  timeout: 120

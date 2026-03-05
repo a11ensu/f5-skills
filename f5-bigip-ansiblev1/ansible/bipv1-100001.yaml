@@ -1,0 +1,16 @@
+- name: Ansible via Local
+  hosts: "{{ ply_host }}"
+  gather_facts: no
+  connection: local
+  vars_files:
+  - .config/ansible.yaml
+  - vars/bipv1_provider.yaml
+
+  tasks:
+  - name: Run show sys version
+    bigip_pool:
+      state: present
+      name: my-pool
+      partition: Common
+      provider: "{{ bip }}"
+    delegate_to: localhost

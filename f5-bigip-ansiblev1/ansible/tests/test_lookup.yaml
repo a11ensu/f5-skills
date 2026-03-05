@@ -1,0 +1,20 @@
+- name: Test Hostname Lookup
+  hosts: localhost
+  connection: local
+  vars_files:
+  - ../.config/ansible.yaml
+  - ../vars/bipv1_provider.yaml
+  tasks:
+  - name: Debug bip variable
+    debug:
+      var: bip
+  - name: Verify lookup success
+    assert:
+      that:
+        - bip.user is defined
+        - bip.address is undefined # bip doesn't have address, cbip entry does. Wait, bip uses cbip.
+        # Let's check if the lookup actually found something. 
+        # definition: user: "{{ cbip[ply_host | lower | replace('-', '')].username ... }}"
+        # If cbip[...] is missing, it might fail or return undefined. 
+        # But we want to fail if it's not found. 
+        # Actually, if the key is missing in cbip, Jinja2 will scream "undefined variable", which is what we want to test FOR (that it DOESN'T scream).
