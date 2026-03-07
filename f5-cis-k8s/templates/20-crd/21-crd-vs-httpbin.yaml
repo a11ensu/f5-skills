@@ -1,0 +1,33 @@
+# F5 CIS VirtualServer — httpbin App
+#
+# Creates an L7 HTTP Virtual Server on BIG-IP with:
+#   - Host-based routing: httpbin.example.com
+#   - All paths (/) → httpbin service
+#   - Shared VIP via hostGroup (uses same VIP as cafe VS when hostGroup matches)
+#   - ARP and route advertisement enabled for the VIP
+#
+# CUSTOMISE:
+#   - virtualServerAddress: BIG-IP VIP address (same as cafe if using shared VIP)
+#   - host: hostname for routing
+#   - pools[].service / servicePort: match your Kubernetes Service
+#
+# Apply: kubectl -n <namespace> apply -f 21-crd-vs-httpbin.yaml
+#
+apiVersion: "cis.f5.com/v1"
+kind: VirtualServer
+metadata:
+  name: httpbin-virtual-server
+  labels:
+    f5cr: "true"
+spec:
+  host: httpbin.example.com
+  hostGroup: "cafe"
+  virtualServerAddress: "<VIP_ADDRESS>"
+  pools:
+    - path: /
+      service: httpbin
+      servicePort: 80
+  serviceAddress:
+    - icmpEcho: "enable"
+      arpEnabled: true
+      routeAdvertisement: "all"

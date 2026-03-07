@@ -1,0 +1,77 @@
+# F5 CIS Deployment — CRD Mode, Cluster Pool Member Type
+#
+# This is the main CIS controller deployment template.
+# CUSTOMISE before applying:
+#   - --bigip-url          : BIG-IP management IP address
+#   - --bigip-partition    : BIG-IP partition name (CIS creates objects here)
+#   - --flannel-name       : BIG-IP VXLAN tunnel full path (e.g. /Common/vxlan_wClstr12)
+#   - image tag            : Match the CRD version (e.g. 2.20.3)
+#   - Secret name          : Must match the secret created in 02-cis-secret.yaml
+#
+# DO NOT set replicas > 1. CIS must run as a single instance.
+#
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cis-crd-cluster
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cis-ctlr-deployment
+  template:
+    metadata:
+      labels:
+        app: cis-ctlr-deployment
+    spec:
+      serviceAccountName: bigip-ctlr
+      containers:
+        - name: k8s-bigip-ctlr
+          # Image tag should match the CRD version installed in Step 0
+          image: "f5networks/k8s-bigip-ctlr:2.20.3"
+          env:
+            - name: BIGIP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: bigip-login
+                  key: username
+            - name: BIGIP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: bigip-login
+                  key: password
+          command: ["/app/bin/k8s-bigip-ctlr"]
+          args: [
+            # --- Required: BIG-IP connection ---
+            "--bigip-username=$(BIGIP_USERNAME)",
+            "--bigip-password=$(BIGIP_PASSWORD)",
+            "--bigip-url=<BIGIP_MGMT_IP>",
+            "--bigip-partition=<BIGIP_PARTITION>",
+
+            # --- CRD mode (required for this template) ---
+            "--custom-resource-mode=true",
+
+            # --- Pool member type: cluster (uses pod IPs via VXLAN) ---
+            "--pool-member-type=cluster",
+
+            # --- VXLAN tunnel name on BIG-IP ---
+            # Use --flannel-name for Flannel or Cilium CNI
+            # Use --cilium-name as alternative for Cilium
+            # Only ONE VXLAN parameter allowed
+            "--flannel-name=<BIGIP_VXLAN_TUNNEL>",
+
+            # --- Logging ---
+            "--log-as3-response=true",
+            "--log-level=INFO",
+
+            # --- TLS ---
+            "--insecure"
+
+            # --- Optional parameters (uncomment as needed) ---
+            #"--ipam=true",
+            #"--default-ingress-ip=<VIP_ADDRESS>",
+            #"--namespace=<NAMESPACE>",
+            #"--namespace-label=<LABEL_KEY>=<LABEL_VALUE>",
+            #"--node-label-selector=<LABEL>",
+            ]

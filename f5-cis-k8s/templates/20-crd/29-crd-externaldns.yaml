@@ -1,0 +1,33 @@
+# F5 CIS ExternalDNS — GTM/GSLB Wide-IP Example
+#
+# Creates a DNS wide-IP record on a GTM-enabled BIG-IP for GSLB.
+# Requires GTM parameters in the CIS deployment:
+#   --gtm-bigip-url, --gtm-bigip-username, --gtm-bigip-password
+#
+# CUSTOMISE:
+#   - domainName: DNS domain to manage
+#   - pools[].dataServerName: GTM server path on BIG-IP
+#   - pools[].monitor: health monitor settings
+#
+# Apply: kubectl -n <namespace> apply -f 29-crd-externaldns.yaml
+#
+apiVersion: "cis.f5.com/v1"
+kind: ExternalDNS
+metadata:
+  name: exdns-example
+  labels:
+    f5cr: "true"
+spec:
+  domainName: example.com
+  dnsRecordType: A
+  loadBalanceMethod: round-robin
+  pools:
+    - dnsRecordType: A
+      loadBalanceMethod: round-robin
+      dataServerName: /Common/GSLBServer
+      monitor:
+        type: https
+        send: "GET /"
+        recv: ""
+        interval: 10
+        timeout: 10

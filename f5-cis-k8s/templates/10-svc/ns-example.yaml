@@ -1,0 +1,9 @@
+# Example Namespace for CIS workloads
+# The label "type: crd" can be used with --namespace-label to scope CIS.
+# CUSTOMISE: Change the namespace name as needed.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mel
+  labels:
+    type: "crd"

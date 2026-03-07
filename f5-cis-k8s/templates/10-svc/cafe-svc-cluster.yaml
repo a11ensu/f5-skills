@@ -1,0 +1,78 @@
+# Cafe Demo Application — ClusterIP Services
+# Deploys two services (coffee, tea) for testing L7 path-based routing.
+# Use with VirtualServer CRD to expose via BIG-IP.
+#
+# Apply to a namespace: kubectl apply -f cafe-svc-cluster.yaml -n <namespace>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coffee
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: coffee
+  template:
+    metadata:
+      labels:
+        app: coffee
+    spec:
+      containers:
+        - image: nginxdemos/nginx-hello:plain-text
+          imagePullPolicy: IfNotPresent
+          name: coffee
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coffee-svc
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app: coffee
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tea
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tea
+  template:
+    metadata:
+      labels:
+        app: tea
+    spec:
+      containers:
+        - image: nginxdemos/nginx-hello:plain-text
+          imagePullPolicy: IfNotPresent
+          name: tea
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tea-svc
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app: tea
+  type: ClusterIP

@@ -1,0 +1,8 @@
+# F5 CIS ServiceAccount
+# Creates a ServiceAccount for the CIS controller in kube-system namespace.
+# This SA is referenced by the CIS Deployment and bound to a ClusterRole via RBAC.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: bigip-ctlr
+  namespace: kube-system

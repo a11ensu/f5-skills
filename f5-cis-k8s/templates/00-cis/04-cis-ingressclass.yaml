@@ -1,0 +1,34 @@
+# F5 CIS IngressClass definitions
+# These IngressClass resources allow CIS to be selected as the ingress controller.
+# Create the classes relevant to your deployment mode.
+
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: "ingclass-cluster"
+  annotations:
+    ingressclass.kubernetes.io/is-default-class: "false"
+spec:
+  controller: f5.com/cntr-ingress-svcs
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: "ingclass-nodeport"
+  annotations:
+    ingressclass.kubernetes.io/is-default-class: "false"
+spec:
+  controller: f5.com/cntr-ingress-svcs
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: "ingclass-crd"
+  annotations:
+    ingressclass.kubernetes.io/is-default-class: "false"
+spec:
+  controller: f5.com/cntr-ingress-svcs

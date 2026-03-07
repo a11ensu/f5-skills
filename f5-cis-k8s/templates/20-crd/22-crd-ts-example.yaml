@@ -1,0 +1,28 @@
+# F5 CIS TransportServer — L4 TCP Example
+#
+# Creates an L4 TCP Virtual Server on BIG-IP for direct TCP forwarding.
+# Useful for services like ArgoCD, databases, gRPC, or any TCP service.
+#
+# CUSTOMISE:
+#   - virtualServerAddress: BIG-IP VIP address
+#   - virtualServerPort: TCP port to listen on
+#   - virtualServerName: Name for the VS on BIG-IP
+#   - pool.service / servicePort: match your Kubernetes Service
+#
+# Apply: kubectl -n <namespace> apply -f 22-crd-ts-example.yaml
+#
+apiVersion: "cis.f5.com/v1"
+kind: TransportServer
+metadata:
+  labels:
+    f5cr: "true"
+  name: example-transport-server
+spec:
+  virtualServerAddress: "<VIP_ADDRESS>"
+  virtualServerPort: 443
+  virtualServerName: vs-example-tcp
+  mode: standard
+  snat: auto
+  pool:
+    service: <SERVICE_NAME>
+    servicePort: 443
