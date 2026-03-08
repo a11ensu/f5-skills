@@ -1,0 +1,40 @@
+# F5 CIS VirtualServer -- Cafe App (NodePort variant)
+#
+# Creates an L7 HTTP Virtual Server on BIG-IP with:
+#   - Host-based routing: cafe.example.com
+#   - Path-based routing: /coffee -> coffee-svc, /tea -> tea-svc
+#   - Shared VIP via hostGroup
+#   - ARP and route advertisement enabled for the VIP
+#
+# This is the same as 21-crd-vs-cafe.yaml but intended for use with
+# NodePort pool member type. The CRD is identical; the difference is
+# in how CIS resolves pool members (NodePort vs pod IPs).
+#
+# CUSTOMISE:
+#   - virtualServerAddress: BIG-IP VIP address
+#   - host: hostname for routing
+#   - pools[].service / servicePort: match your NodePort Service
+#
+# Apply: kubectl -n <namespace> apply -f 21-crd-vs-nodeport-cafe.yaml
+#
+apiVersion: "cis.f5.com/v1"
+kind: VirtualServer
+metadata:
+  name: cafe-virtual-server
+  labels:
+    f5cr: "true"
+spec:
+  host: cafe.example.com
+  hostGroup: "cafe"
+  virtualServerAddress: "<VIP_ADDRESS>"
+  pools:
+    - path: /coffee
+      service: coffee-svc
+      servicePort: 80
+    - path: /tea
+      service: tea-svc
+      servicePort: 80
+  serviceAddress:
+    - icmpEcho: "enable"
+      arpEnabled: true
+      routeAdvertisement: "all"

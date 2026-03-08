@@ -1,0 +1,31 @@
+# F5 CIS BIG-IP Node for VXLAN Overlay
+#
+# Creates a Kubernetes Node object representing the BIG-IP device.
+# Required for Cluster mode with VXLAN when using Flannel or Calico CNI.
+# For Cilium CNI with VTEP support, this Node object may not be needed.
+#
+# CUSTOMISE:
+#   - metadata.name       : A unique node name for the BIG-IP (e.g. bip202)
+#   - flannel annotations : Replace IP and MAC with your BIG-IP VXLAN tunnel values
+#   - spec.podCIDR        : The pod CIDR assigned to BIG-IP's VXLAN self-IP
+#
+# The flannel annotations are used regardless of CNI (Flannel, Calico, or Cilium)
+# when CIS needs to register the BIG-IP as a VXLAN endpoint in the cluster.
+#
+# Apply: kubectl apply -f 05-cis-node.yaml
+#
+apiVersion: v1
+kind: Node
+metadata:
+  name: <BIGIP_NODE_NAME>
+  annotations:
+    # Replace with BIG-IP VXLAN tunnel self-IP (the IP on the VLAN facing K8s)
+    flannel.alpha.coreos.com/public-ip: "<BIGIP_VXLAN_PUBLIC_IP>"
+    # Replace with BIG-IP VXLAN tunnel MAC address
+    # Find via: tmsh show net tunnels tunnel <tunnel_name> all-properties
+    flannel.alpha.coreos.com/backend-data: '{"VtepMAC":"<BIGIP_VXLAN_MAC>"}'
+    flannel.alpha.coreos.com/backend-type: "vxlan"
+    flannel.alpha.coreos.com/kube-subnet-manager: "true"
+spec:
+  # Replace with the pod CIDR routed through BIG-IP's VXLAN tunnel
+  podCIDR: "<BIGIP_POD_CIDR>"

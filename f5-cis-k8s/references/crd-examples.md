@@ -13,7 +13,9 @@ For CRD field definitions and types, see `references/cis-crd-overview.md`.
 |----------|------|-------------|
 | `templates/20-crd/21-crd-vs-cafe.yaml` | VirtualServer | L7 HTTP with path-based routing (/coffee, /tea), hostGroup |
 | `templates/20-crd/21-crd-vs-httpbin.yaml` | VirtualServer | L7 HTTP for httpbin, shared VIP via hostGroup |
-| `templates/20-crd/22-crd-ts-example.yaml` | TransportServer | L4 TCP forwarding |
+| `templates/20-crd/21-crd-vs-nodeport-cafe.yaml` | VirtualServer | L7 HTTP cafe for NodePort mode |
+| `templates/20-crd/22-crd-ts-example.yaml` | TransportServer | L4 TCP generic example |
+| `templates/20-crd/22-crd-ts-argocd.yaml` | TransportServer | L4 TCP for ArgoCD (port 443) |
 | `templates/20-crd/29-crd-externaldns.yaml` | ExternalDNS | GTM/GSLB wide-IP |
 
 See `templates/20-crd/README.md` for the full index and numbering convention.
@@ -47,8 +49,8 @@ Key fields to customise:
 | Field | Description | Example |
 |-------|-------------|---------|
 | `spec.host` | Hostname for routing | `cafe.example.com` |
-| `spec.virtualServerAddress` | BIG-IP VIP | `10.1.1.100` |
-| `spec.hostGroup` | Share VIP across multiple VS CRs | `shared-vip` |
+| `spec.virtualServerAddress` | BIG-IP VIP | `10.171.184.221` |
+| `spec.hostGroup` | Share VIP across multiple VS CRs | `cafe` |
 | `spec.pools[].path` | URL path to match | `/coffee` |
 | `spec.pools[].service` | K8s Service name | `coffee-svc` |
 | `spec.pools[].servicePort` | Service port | `80` |
@@ -65,10 +67,10 @@ Key fields to customise:
 
 | Field | Description | Example |
 |-------|-------------|---------|
-| `spec.virtualServerAddress` | BIG-IP VIP | `10.1.1.101` |
+| `spec.virtualServerAddress` | BIG-IP VIP | `10.171.184.221` |
 | `spec.virtualServerPort` | Listening port | `443` |
-| `spec.virtualServerName` | VS name on BIG-IP | `vs-myapp-tcp` |
-| `spec.pool.service` | K8s Service name | `myapp-svc` |
+| `spec.virtualServerName` | VS name on BIG-IP | `vs-argocd` |
+| `spec.pool.service` | K8s Service name | `argo-cd-argocd-server` |
 | `spec.pool.servicePort` | Service port | `443` |
 | `spec.type` | Protocol: `tcp` or `udp` | `tcp` |
 
@@ -140,8 +142,8 @@ kubectl --namespace=kube-system logs deployment/<cis-deployment> --tail=50
 ```
 
 Look for:
-- `"msg":"Posting declaration"` — CIS is sending config to BIG-IP
-- `"msg":"AS3 response status code: 200"` — BIG-IP accepted the config
+- `"msg":"Posting declaration"` -- CIS is sending config to BIG-IP
+- `"msg":"AS3 response status code: 200"` -- BIG-IP accepted the config
 - No `422` or `500` errors
 
 ---
@@ -157,13 +159,13 @@ Multiple VirtualServer CRs can share the same VIP:
 spec:
   host: app1.example.com
   hostGroup: "shared-vip"
-  virtualServerAddress: "10.1.1.100"
+  virtualServerAddress: "10.171.184.221"
 
 # VS 2
 spec:
   host: app2.example.com
   hostGroup: "shared-vip"
-  virtualServerAddress: "10.1.1.100"
+  virtualServerAddress: "10.171.184.221"
 ```
 
 ### serviceAddress (ARP + Route Advertisement)

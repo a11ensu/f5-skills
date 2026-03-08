@@ -28,8 +28,11 @@ kubectl get crd | grep f5
 # Check CIS deployment details
 kubectl --namespace=kube-system describe deployment <cis-deployment>
 
-# Check events
+# Check events in kube-system
 kubectl --namespace=kube-system get events --sort-by=.lastTimestamp | tail -20
+
+# Check BIG-IP Node (Cluster mode VXLAN)
+kubectl get nodes -o wide
 ```
 
 ---
@@ -42,13 +45,14 @@ kubectl --namespace=kube-system get events --sort-by=.lastTimestamp | tail -20
 | CIS pod running but no VS on BIG-IP | CRD label mismatch | Ensure CR has label `f5cr: "true"`. Check `--custom-resource-mode=true` is set |
 | CIS logs: `partition not found` | Partition does not exist on BIG-IP | Create the partition on BIG-IP first, or change `--bigip-partition` |
 | VIP not reachable from client | Missing VXLAN tunnel, route, or self-IP on BIG-IP | Verify BIG-IP has: VXLAN tunnel with self-IP in pod CIDR, route to pod CIDR via tunnel |
-| Pool members show 0 active | CIS cannot reach pod IPs (Cluster mode) | Check VXLAN tunnel is UP on BIG-IP; verify `--flannel-name` matches the actual tunnel name; check Cilium VTEP config |
-| `No resources found` when getting CRDs | CRDs not installed | Install CRDs — see `references/cis-install-steps.md` Step 0 |
+| Pool members show 0 active | CIS cannot reach pod IPs (Cluster mode) | Check VXLAN tunnel is UP on BIG-IP; verify `--flannel-name` matches the actual tunnel name; check BIG-IP Node object or Cilium VTEP config |
+| `No resources found` when getting CRDs | CRDs not installed | Install CRDs -- see `references/cis-install-steps.md` Step 0 |
 | CIS logs: `AS3 response 422` | Invalid AS3 declaration | Enable `--log-as3-response=true` and `--log-level=DEBUG` to see full AS3 error |
-| Multiple CIS pods competing | Replicas > 1 | CIS deployment MUST have `replicas: 1` — do NOT increase |
+| Multiple CIS pods competing | Replicas > 1 | CIS deployment MUST have `replicas: 1` -- do NOT increase |
 | CIS logs: `connection refused` | BIG-IP management IP unreachable or wrong port | Verify `--bigip-url` value; check network connectivity from cluster to BIG-IP mgmt |
 | CIS logs: `x509: certificate signed by unknown authority` | TLS verification failing | Add `--insecure` flag to skip TLS cert verification |
 | CRD applied but CIS ignores it | Missing label or wrong namespace | Check `f5cr: "true"` label; check `--namespace` or `--namespace-label` CIS flags |
+| BIG-IP Node shows NotReady | Expected for BIG-IP pseudo-node | This is normal -- BIG-IP is not a real K8s node, it only needs to exist for VXLAN routing |
 
 ---
 
@@ -66,9 +70,9 @@ kubectl --namespace=kube-system get events --sort-by=.lastTimestamp | tail -20
    ```bash
    kubectl --namespace=kube-system logs deployment/<cis-deployment> --tail=100
    ```
-   - Auth errors → fix credentials in secret
-   - Connection errors → fix BIG-IP URL
-   - Partition errors → create partition on BIG-IP
+   - Auth errors -> fix credentials in secret
+   - Connection errors -> fix BIG-IP URL
+   - Partition errors -> create partition on BIG-IP
 
 3. **Verify CRD objects are created correctly**
    ```bash
@@ -86,7 +90,17 @@ kubectl --namespace=kube-system get events --sort-by=.lastTimestamp | tail -20
    - Pods must be Running
    - Endpoints must exist and have addresses
 
-5. **Enable debug logging if needed**
+5. **Verify network connectivity (Cluster mode)**
+   ```bash
+   # Check BIG-IP Node exists
+   kubectl get nodes -o wide
+   # Check VXLAN flag in CIS deployment
+   kubectl --namespace=kube-system get deployment <cis-deployment> -o yaml | grep flannel-name
+   ```
+   - BIG-IP Node must exist with correct annotations
+   - `--flannel-name` must match the actual tunnel name on BIG-IP
+
+6. **Enable debug logging if needed**
    Edit the CIS deployment to add:
    ```
    --log-level=DEBUG
@@ -97,7 +111,7 @@ kubectl --namespace=kube-system get events --sort-by=.lastTimestamp | tail -20
    kubectl --namespace=kube-system rollout restart deployment/<cis-deployment>
    ```
 
-6. **Test connectivity**
+7. **Test connectivity**
    ```bash
    curl -vvv http://<VIP>/ -H "Host: <hostname>"
    ```

@@ -11,6 +11,7 @@ for use with F5 CIS.
 |----------|-------------|
 | `templates/10-svc/ns-example.yaml` | Example namespace with `type: crd` label |
 | `templates/10-svc/cafe-svc-cluster.yaml` | Cafe demo app (coffee + tea) with ClusterIP services |
+| `templates/10-svc/cafe-svc-nodeport.yaml` | Cafe demo app (coffee + tea) with NodePort services |
 | `templates/10-svc/httpbin-svc.yaml` | httpbin HTTP request/response testing service |
 
 ---
@@ -21,7 +22,8 @@ for use with F5 CIS.
 kubectl apply -f templates/10-svc/ns-example.yaml
 ```
 
-Or create a custom namespace:
+The template creates a namespace `mel` with label `type: crd`. To create
+additional namespaces, copy the template and change the name:
 
 ```bash
 kubectl create namespace <namespace>
@@ -38,8 +40,16 @@ Deploys two services for testing L7 path-based routing:
 - `coffee-svc` (port 80 -> 8080, 2 replicas)
 - `tea-svc` (port 80 -> 8080, 1 replica)
 
+For **Cluster mode** (ClusterIP services):
+
 ```bash
 kubectl apply -f templates/10-svc/cafe-svc-cluster.yaml -n <namespace>
+```
+
+For **NodePort mode** (NodePort services):
+
+```bash
+kubectl apply -f templates/10-svc/cafe-svc-nodeport.yaml -n <namespace>
 ```
 
 Verify:
@@ -141,6 +151,9 @@ After a CRD (VirtualServer/TransportServer) is applied, test with `curl`:
 # L7 HTTP test (VirtualServer)
 curl http://<VIP>/<path> -H "Host: <hostname>"
 
+# L7 HTTP headers only
+curl -I http://<VIP>/ -H "Host: <hostname>"
+
 # L4 TCP test (TransportServer)
 curl -v telnet://<VIP>:<port>
 
@@ -149,6 +162,27 @@ curl -vvv http://<VIP>/ -H "Host: <hostname>"
 
 # Check HTTP status only
 curl -s -o /dev/null -w "%{http_code}" http://<VIP>/ -H "Host: <hostname>"
+```
+
+### Expected Results (Cafe + httpbin example)
+
+```bash
+# Coffee service
+curl http://<VIP>/coffee -H "Host: cafe.example.com"
+# Server address: 172.20.24.66:8080
+# Server name: coffee-6db967495b-8v9zm
+# URI: /coffee
+
+# Tea service
+curl http://<VIP>/tea -H "Host: cafe.example.com"
+# Server address: 172.20.24.67:8080
+# Server name: tea-7b7d6c947d-j6mxr
+# URI: /tea
+
+# httpbin service
+curl -I http://<VIP>/ -H "Host: httpbin.example.com"
+# HTTP/1.1 200 OK
+# Server: gunicorn/19.9.0
 ```
 
 > **Note:** If the Agent has no connectivity to the VIP, show the user the

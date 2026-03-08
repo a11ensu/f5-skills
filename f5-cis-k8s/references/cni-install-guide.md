@@ -1,7 +1,7 @@
 # CNI Installation Guide
 
 This document covers installing CNI plugins that are compatible with F5 CIS.
-CNI is an **optional prerequisite** — if already installed, skip this entirely.
+CNI is an **optional prerequisite** -- if already installed, skip this entirely.
 
 If CNI is not installed, the **user must specify** which CNI to use.
 CNI installation via Helm requires:
@@ -15,11 +15,11 @@ See `references/helm-guide.md` for Helm setup and repo commands.
 ## Detecting Installed CNI
 
 ```bash
-# Check for running CNI pods
-kubectl --namespace=kube-system get pods | grep -iE 'cilium|flannel|calico'
+# Check for running CNI pods across all namespaces
+kubectl get pods -A | grep -iE 'cilium|flannel|calico'
 
-# Check for CNI config files on a node
-kubectl get nodes -o wide
+# Check for CNI-related namespaces
+kubectl get namespace | grep -iE 'cilium|flannel|calico|tigera'
 ```
 
 If CNI pods are running and healthy, CNI is already installed.
@@ -52,7 +52,7 @@ cilium status   # if cilium CLI is installed
 When using Cilium with CIS in Cluster mode (VXLAN), Cilium can be configured
 with VTEP (Virtual Tunnel Endpoint) integration so that the BIG-IP VXLAN
 tunnel endpoint is known to Cilium. This eliminates the need for a fake Node
-object.
+object (`05-cis-node.yaml`).
 
 ```bash
 helm upgrade cilium cilium/cilium \
@@ -98,6 +98,22 @@ kubectl --namespace=kube-system get pods | grep flannel
 
 ## Calico
 
+### Install via kubectl (Tigera operator method -- tested)
+
+This is the tested installation method used in the working example.
+
+```bash
+# Step 1: Install Tigera operator
+kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.31.2/manifests/tigera-operator.yaml
+
+# Step 2: Install Calico custom resource
+# Use the default custom-resources.yaml or a customised one
+kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.31.2/manifests/custom-resources.yaml
+```
+
+> **Note:** If a custom Calico CR is needed (e.g. to configure podCIDR, VXLAN backend,
+> BGP peering, etc.), download and modify the custom-resources.yaml before applying.
+
 ### Install via Helm
 
 ```bash
@@ -105,25 +121,22 @@ helm repo add projectcalico https://docs.tigera.io/calico/charts
 helm repo update
 
 helm install calico projectcalico/tigera-operator \
-  --version v3.28.0 \
+  --version v3.31.2 \
   --namespace tigera-operator \
   --create-namespace
-```
-
-### Alternative: Install via kubectl (operator method)
-
-```bash
-kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/tigera-operator.yaml
-kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/custom-resources.yaml
 ```
 
 ### Verify
 
 ```bash
 kubectl get pods -n calico-system
-# or
-kubectl --namespace=kube-system get pods | grep calico
+kubectl get pods -n tigera-operator
+# All pods should be Running
 ```
+
+Expected namespaces:
+- `tigera-operator` -- Tigera operator pod
+- `calico-system` -- Calico node, kube-controllers, typha, apiserver, csi-node-driver
 
 ---
 
@@ -147,3 +160,14 @@ kubectl get pods -A          # No pods stuck in Pending/ContainerCreating
 | Calico | `--flannel-name` | When using VXLAN backend mode |
 
 Only **one** VXLAN flag is allowed per CIS deployment.
+
+---
+
+## BIG-IP Node Object
+
+For Cluster mode with VXLAN (Flannel or Calico), CIS needs a Kubernetes Node
+object representing the BIG-IP so the CNI can route pod traffic to BIG-IP's
+VXLAN tunnel. See `templates/00-cis/05-cis-node.yaml`.
+
+For Cilium with VTEP support, the VTEP configuration replaces the need for
+a BIG-IP Node object.

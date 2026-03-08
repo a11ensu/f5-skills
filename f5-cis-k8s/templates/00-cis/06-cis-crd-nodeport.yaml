@@ -1,0 +1,73 @@
+# F5 CIS Deployment -- CRD Mode, NodePort Pool Member Type
+#
+# This is an alternative CIS controller deployment for NodePort mode.
+# NodePort mode does NOT require VXLAN tunnels or overlay networking.
+# BIG-IP sends traffic to node IPs on the NodePort.
+#
+# CUSTOMISE before applying:
+#   - --bigip-url          : BIG-IP management IP address
+#   - --bigip-partition    : BIG-IP partition name (CIS creates objects here)
+#   - image tag            : Match the CRD version (e.g. 2.20.3)
+#   - Secret name          : Must match the secret created in 02-cis-secret.yaml
+#
+# DO NOT set replicas > 1. CIS must run as a single instance.
+#
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cis-crd-nodeport
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cis-ctlr-deployment
+  template:
+    metadata:
+      labels:
+        app: cis-ctlr-deployment
+    spec:
+      serviceAccountName: bigip-ctlr
+      containers:
+        - name: k8s-bigip-ctlr
+          # Image tag should match the CRD version installed in Step 0
+          image: "f5networks/k8s-bigip-ctlr:2.20.3"
+          env:
+            - name: BIGIP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: bigip-login
+                  key: username
+            - name: BIGIP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: bigip-login
+                  key: password
+          command: ["/app/bin/k8s-bigip-ctlr"]
+          args: [
+            # --- Required: BIG-IP connection ---
+            "--bigip-username=$(BIGIP_USERNAME)",
+            "--bigip-password=$(BIGIP_PASSWORD)",
+            "--bigip-url=<BIGIP_MGMT_IP>",
+            "--bigip-partition=<BIGIP_PARTITION>",
+
+            # --- CRD mode (required for this template) ---
+            "--custom-resource-mode=true",
+
+            # --- Pool member type: nodeport (uses node IPs + NodePort) ---
+            "--pool-member-type=nodeport",
+
+            # --- Logging ---
+            "--log-as3-response=true",
+            "--log-level=INFO",
+
+            # --- TLS ---
+            "--insecure"
+
+            # --- Optional parameters (uncomment as needed) ---
+            #"--ipam=true",
+            #"--default-ingress-ip=<VIP_ADDRESS>",
+            #"--namespace=<NAMESPACE>",
+            #"--namespace-label=<LABEL_KEY>=<LABEL_VALUE>",
+            #"--node-label-selector=<LABEL>",
+            ]

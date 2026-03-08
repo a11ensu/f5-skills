@@ -1,0 +1,27 @@
+# F5 CIS TransportServer -- ArgoCD L4 TCP
+#
+# Creates an L4 TCP Virtual Server on BIG-IP for ArgoCD.
+# Routes HTTPS (443) traffic directly to the ArgoCD server service.
+#
+# CUSTOMISE:
+#   - virtualServerAddress: BIG-IP VIP address
+#   - pool.service: match the ArgoCD server Kubernetes Service name
+#   - pool.servicePort: match the ArgoCD service port
+#
+# Apply: kubectl -n <argocd-namespace> apply -f 22-crd-ts-argocd.yaml
+#
+apiVersion: "cis.f5.com/v1"
+kind: TransportServer
+metadata:
+  labels:
+    f5cr: "true"
+  name: argocd-transport-server
+spec:
+  virtualServerAddress: "<VIP_ADDRESS>"
+  virtualServerPort: 443
+  virtualServerName: vs-argocd
+  mode: standard
+  snat: auto
+  pool:
+    service: argo-cd-argocd-server
+    servicePort: 443
